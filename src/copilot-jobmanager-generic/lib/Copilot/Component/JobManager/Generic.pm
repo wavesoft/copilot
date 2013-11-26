@@ -146,6 +146,9 @@ sub _loadConfig
     $self->{'REDIS_HOST'} = ($options->{'COMPONENT_OPTIONS'}->{'RedisServer'} || die "Redis server address is not provided\n");
     $self->{'REDIS_PORT'} = ($options->{'COMPONENT_OPTIONS'}->{'RedisPort'}   || die "Redis port address is not provided\n");
 
+    # Tunable parameters
+    $self->{'REQUEST_COOLDOWN'} = ($options->{'COMPONENT_OPTIONS'}->{'RequestCooldown'} || 60);
+
     # Done jobs dir
     $self->{'DONE_JOB_DIR'} = ($options->{'COMPONENT_OPTIONS'}->{'DoneJobDir'} || undef);
     $self->{'DONE_JOB_DIR'} = $self->{'DONE_JOB_DIR'}.'/' if defined $self->{'DONE_JOB_DIR'};
@@ -447,7 +450,7 @@ sub componentWantGetJobHandler
     my $lastSeen = $r->get("agentseen::".$f);
     my $t = time();
 
-    if (defined ($lastSeen) and ($t - $lastSeen) < 60)
+    if (defined ($lastSeen) and ($t - $lastSeen) < $self->{'REQUEST_COOLDOWN'})
     {
         $kernel->post($container, $logHandler, "Agent ".$input->{'from'}." sending job requests way to often. Putting bastard to sleep.", 'info');
 
